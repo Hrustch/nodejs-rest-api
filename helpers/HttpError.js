@@ -1,6 +1,6 @@
 const HttpError = (status, massage)=>{
     const error = new Error(massage)
-    Error.status = status
+    error.status = status
     return error;
 }
 
