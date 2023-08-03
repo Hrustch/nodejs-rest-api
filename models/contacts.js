@@ -5,10 +5,11 @@ const path = require("path");
 
 const contactsPath = path.join(__dirname, "contacts.json");
 
+
+//FUNCTIONS
 const listContacts = async () => {
   const contacts = await fs.readFile(contactsPath, "utf-8");
   return JSON.parse(contacts);
-  // return contacts;
 };
 
 const getContactById = async (contactId) => {

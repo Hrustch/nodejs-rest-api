@@ -13,6 +13,8 @@ const addSchema = Joi.object({
   phone: Joi.string().required(),
 });
 
+
+// ROUTES
 router.get("/", async (req, res, next) => {
   try {
     const result = await contact.listContacts();
