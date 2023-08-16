@@ -1,9 +1,9 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
+const { Schema, model } = require("mongoose")
+const Joi = require("joi")
 
-const { handleMongooseError } = require("../helpers");
+const { handleMongooseError } = require("../helpers")
 
-const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
 
 const userSchema = new Schema(
   {
@@ -29,30 +29,29 @@ const userSchema = new Schema(
     },
   },
   { versionKey: false }
-);
+)
 
-userSchema.post("save", handleMongooseError);
-
+userSchema.post("save", handleMongooseError)
 
 const registerSchema = Joi.object({
-    password: Joi.string().required().min(6),
-    email: Joi.string().required().pattern(pattern),
-    subscription: Joi.string(),
-});
+  password: Joi.string().required().min(6),
+  email: Joi.string().required().pattern(pattern),
+  subscription: Joi.string(),
+})
 
 const loginSchema = Joi.object({
-    password: Joi.string().required().min(6),
-    email: Joi.string().required().pattern(pattern),
-});
+  password: Joi.string().required().min(6),
+  email: Joi.string().required().pattern(pattern),
+})
 
 const schemas = {
-    registerSchema,
-    loginSchema,
+  registerSchema,
+  loginSchema,
 }
 
-const User = model("user", userSchema);
+const User = model("user", userSchema)
 
 module.exports = {
   User,
   schemas,
-};
+}

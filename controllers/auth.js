@@ -13,7 +13,6 @@ const registerUser = async (req, res, next) => {
     const hashPassword = await bcrypt.hash(password, 10)
 
     const newUser = await User.create({ ...req.body, password: hashPassword })
-    console.log(newUser)
     res.status(201).json({
       email: newUser.email,
     })
@@ -30,8 +29,8 @@ const loginUser = async (req, res, next) => {
       throw HttpError(401, "Email invalid")
     }
 
-    const passwordCompare = await bcrypt.compare(user.password, password)
-    if (passwordCompare) {
+    const passwordCompare = await bcrypt.compare(password, user.password)
+    if (!passwordCompare) {
       throw HttpError(401, "Password invalid")
     }
 
@@ -40,6 +39,7 @@ const loginUser = async (req, res, next) => {
     }
 
     const token = await jwt.sign(payload, SECRET_KEY, { expiresIn: "24h" })
+    await User.findByIdAndUpdate(user._id, { token })
 
     res.status(201).json({ token })
   } catch (error) {
@@ -47,7 +47,22 @@ const loginUser = async (req, res, next) => {
   }
 }
 
+const getCurrent = async (req, res) => {
+  const { email, subscription } = req.user
+  res.status(200).json({ email, subscription })
+}
+
+const logoutUser = async (req, res, next) => {
+  const { _id } = req.user
+  await User.findByIdAndUpdate(_id, { token: null })
+  res.json({
+    message: "Logout success",
+  })
+}
+
 module.exports = {
   registerUser,
   loginUser,
+  getCurrent,
+  logoutUser,
 }
