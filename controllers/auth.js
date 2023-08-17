@@ -6,6 +6,8 @@ const { HttpError } = require("../helpers")
 const gravatar = require("gravatar")
 const fs = require("fs/promises")
 const path = require("path")
+const Jimp = require("jimp")
+const { nextTick } = require("process")
 const pathAvatar = path.join(__dirname, "../", "public", "avatar")
 
 const registerUser = async (req, res, next) => {
@@ -51,9 +53,7 @@ const loginUser = async (req, res, next) => {
     const token = await jwt.sign(payload, SECRET_KEY, { expiresIn: "24h" })
     await User.findByIdAndUpdate(user._id, { token })
 
-    res
-      .status(201)
-      .json({ token, user: { email, subscription: user.subscription } })
+    res.status(201).json({ token, user: { email, subscription: user.subscription } })
   } catch (error) {
     next(error)
   }
@@ -72,15 +72,26 @@ const logoutUser = async (req, res, next) => {
   })
 }
 
-const updAvatar = async (req, res) => {
+const updAvatar = async (req, res, next) => {
   const { _id } = req.user
-  const oldPath = req.file.path
-  const name = req.file.orinalname
-  const newPath = path.join(pathAvatar, name)
-  await fs.rename(oldPath, newPath)
-  const avatar = path.join("avatar", name)
-  await User.findByIdAndUpdate(_id, { avatar })
-  res.join({ avatar })
+  const {tempPath: path, filename} = req.file
+
+
+  await Jimp.read(tempPath)
+    .then((img) => {
+      img.resize(250, 250) // resize
+      img.writeAsync(tempPath)
+    })
+    .catch((err) => {
+      next(err)
+    })
+
+  const newName = `${_id}_${filename}`
+  const avatarDir = path.join(pathAvatar, newName)
+  await fs.rename(tempPath, avatarDir)
+  const avatarURL = path.join("avatar", newName)
+  await User.findByIdAndUpdate(_id, { avatarURL })
+  res.join({ avatarURL: avatar })
 }
 
 module.exports = {
@@ -88,4 +99,5 @@ module.exports = {
   loginUser,
   getCurrent,
   logoutUser,
+  updAvatar,
 }

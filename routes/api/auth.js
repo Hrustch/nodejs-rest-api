@@ -10,12 +10,6 @@ router.post(  "/register", validateBody(schemas.registerSchema), ctrlAuth.regist
 router.post("/login", validateBody(schemas.loginSchema), ctrlAuth.loginUser)
 router.post("/current", authenticate, ctrlAuth.getCurrent)
 router.post("/logout", authenticate, ctrlAuth.logoutUser)
-
-router.patch(
-  "/avatars",
-  authenticate,
-  upload.single("avatar"),
-  ctrlAuth.updAvatar
-)
+router.patch("/avatars", authenticate, upload.single("avatar"), ctrlAuth.updAvatar)
 
 module.exports = router
