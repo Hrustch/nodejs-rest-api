@@ -3,18 +3,30 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const { SECRET_KEY } = process.env
 const { HttpError } = require("../helpers")
+const gravatar = require("gravatar")
+const fs = require("fs/promises")
+const path = require("path")
+const Jimp = require("jimp")
+const { nextTick } = require("process")
+const pathAvatar = path.join(__dirname, "../", "public", "avatar")
 
 const registerUser = async (req, res, next) => {
   try {
     const { email, password } = req.body
     if (await User.findOne({ email })) {
-      throw HttpError(409, "Email уже зарегестрирован")
+      throw HttpError(409, "Email in use")
     }
     const hashPassword = await bcrypt.hash(password, 10)
+    const avatarURL = gravatar.url(email)
 
-    const newUser = await User.create({ ...req.body, password: hashPassword })
+    const newUser = await User.create({
+      ...req.body,
+      password: hashPassword,
+      avatarURL,
+    })
+    console.log(newUser)
     res.status(201).json({
-      email: newUser.email,
+      user: { email, subscription: newUser.subscription },
     })
   } catch (error) {
     next(error)
@@ -41,7 +53,7 @@ const loginUser = async (req, res, next) => {
     const token = await jwt.sign(payload, SECRET_KEY, { expiresIn: "24h" })
     await User.findByIdAndUpdate(user._id, { token })
 
-    res.status(201).json({ token })
+    res.status(201).json({ token, user: { email, subscription: user.subscription } })
   } catch (error) {
     next(error)
   }
@@ -60,9 +72,32 @@ const logoutUser = async (req, res, next) => {
   })
 }
 
+const updAvatar = async (req, res, next) => {
+  const { _id } = req.user
+  const {tempPath: path, filename} = req.file
+
+
+  await Jimp.read(tempPath)
+    .then((img) => {
+      img.resize(250, 250) // resize
+      img.writeAsync(tempPath)
+    })
+    .catch((err) => {
+      next(err)
+    })
+
+  const newName = `${_id}_${filename}`
+  const avatarDir = path.join(pathAvatar, newName)
+  await fs.rename(tempPath, avatarDir)
+  const avatarURL = path.join("avatar", newName)
+  await User.findByIdAndUpdate(_id, { avatarURL })
+  res.join({ avatarURL: avatar })
+}
+
 module.exports = {
   registerUser,
   loginUser,
   getCurrent,
   logoutUser,
+  updAvatar,
 }
